@@ -11,6 +11,6 @@ class SystemExtensionTest {
     @Test
     @EnvironmentVariable(key = "toto", value = "toto")
     void testEnv() {
-        assertEquals(System.getenv("toto"), "toto");
+        assertEquals("toto", System.getenv("toto"));
     }
 }

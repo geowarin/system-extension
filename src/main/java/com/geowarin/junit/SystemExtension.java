@@ -58,18 +58,37 @@ public class SystemExtension implements AfterEachCallback, BeforeEachCallback, B
             Arrays.stream(environmentVariables).forEach(env -> copyOfEnvs.put(env.key(), env.value()));
             updateEnvs(copyOfEnvs);
         }
+    }
 
+    private void updateEnvs(Map<String, String> envs) {
+        Map<String, String> writableEnv = getEnvironmentVariables();
+        writableEnv.clear();
+        writableEnv.putAll(envs);
+    }
+
+    private Map<String, String> getEnvironmentVariables() {
+        try {
+            return getEnvWindows();
+        } catch (Exception e) {
+            return getEnvLinux();
+        }
     }
 
     @SuppressWarnings("unchecked")
-    private void updateEnvs(Map<String, String> envs) {
+    private Map<String, String> getEnvWindows() throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        Class<?> processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment");
+        Field field = processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment");
+        field.setAccessible(true);
+        return (Map<String, String>) field.get(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, String> getEnvLinux() {
         try {
             Class<?> cl = System.getenv().getClass();
             Field field = cl.getDeclaredField("m");
             field.setAccessible(true);
-            Map<String, String> writableEnv = (Map<String, String>) field.get(System.getenv());
-            writableEnv.clear();
-            writableEnv.putAll(envs);
+            return (Map<String, String>) field.get(System.getenv());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to set environment variable", e);
         }
